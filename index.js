@@ -43,6 +43,7 @@ async function run() {
     // await client.connect();
 
     const foodsCollection=client.db('Foods').collection('collected')
+    const requestedFoodsCollection=client.db('Foods').collection('requested')
 
 // ------------------ get all data from food collection in mongodb----------
 
@@ -65,9 +66,14 @@ app.get('/added-food',async(req,res)=>{
     const query={_id:new ObjectId(id)}
     const result =await foodsCollection.findOne(query)
     res.send(result)
-
-    
   })
+  // -----------------post foods requset in mongodb --------------
+  app.post('/requset',async(req,res)=>{
+    const requested=req.body
+    const result=await requestedFoodsCollection.insertOne(requested)
+    res.send(result)
+  })
+
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
