@@ -1,10 +1,11 @@
 const express=require('express')
 var cors = require('cors')
+require('dotenv').config()
 const app =express()
 const port=process.env.PORT || 5000
 
 const corsOption={
-    origin:['http://localhost:5173','http://localhost:5173','https://food-sharing-6af92.web.app'],
+    origin:['http://localhost:5173','http://localhost:5174','https://food-sharing-6af92.web.app'],
     credentials: true,
     optionSuccessStatus:200,
 }
@@ -42,9 +43,20 @@ async function run() {
 
     const foodsCollection=client.db('Foods').collection('collected')
 
+// ------------------ get all data from food collection in mongodb----------
 
+app.get('/added-food',async(req,res)=>{
+  const cursor=await foodsCollection.find().toArray()
+  res.send(cursor)
+})
 
+  //  ----------------add food in Food collection in mongobd---------
 
+  app.post('/added-food',async(req,res)=>{
+    const addedFood=req.body; 
+    const result=await foodsCollection.insertOne(addedFood) 
+    res.send(result)
+  })
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
