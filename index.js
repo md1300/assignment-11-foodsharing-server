@@ -2,6 +2,7 @@ const express=require('express')
 var cors = require('cors')
 require('dotenv').config()
 const app =express()
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port=process.env.PORT || 5000
 
 const corsOption={
@@ -24,7 +25,7 @@ app.get('/',(req,res)=>{
 // -----mongodb start ---------------
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+
 const uri = "mongodb+srv://food-sharing:mlb29EnMYrlHSQvJ@cluster0.vmhty.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
@@ -56,6 +57,16 @@ app.get('/added-food',async(req,res)=>{
     const addedFood=req.body; 
     const result=await foodsCollection.insertOne(addedFood) 
     res.send(result)
+  })
+
+  // -----------------get a single food from mongodb by find id ------------
+  app.get('/details/:id',async(req,res)=>{
+    const id =req.params.id
+    const query={_id:new ObjectId(id)}
+    const result =await foodsCollection.findOne(query)
+    res.send(result)
+
+    
   })
 
     // Send a ping to confirm a successful connection
