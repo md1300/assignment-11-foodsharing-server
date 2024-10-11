@@ -74,6 +74,13 @@ app.get('/added-food',async(req,res)=>{
     res.send(result)
   })
 
+  // ---------get my posted data -------------------
+  app.get('/my-posted-food/:email',async(req,res)=>{
+      const email=req.params.email;
+      const query={donator_email:email}
+      const result=await foodsCollection.find(query).toArray()
+      res.send(result)
+  })
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
