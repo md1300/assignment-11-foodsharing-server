@@ -88,8 +88,33 @@ app.get('/added-food',async(req,res)=>{
     const id =req.params.id;
     const query={_id:new ObjectId(id)}
     const result=await foodsCollection.deleteOne(query)
+    res.send(result)    
+  })
+
+  // -------get food data for edit it -----------------------
+  app.get('/edit-info/:id',async(req,res)=>{
+    const id=req.params.id
+    const query={_id:new ObjectId(id)}
+    const result=await foodsCollection.findOne(query)
+    res.send(result) 
+
+  })
+
+  // -------------edit or update posted food ---------------------
+
+  app.patch('/edit-info/:id',async(req,res)=>{
+    const id=req.params.id
+    const information=req.body;
+    const filter={_id:new ObjectId(id)}
+    const options = { upsert: true };
+    const updateDoc ={
+      $set:{
+        ...information
+      }
+    }
+    console.log(id,information)
+    const result=await foodsCollection.updateOne(filter,updateDoc,options)
     res.send(result)
-    
   })
 
     // Send a ping to confirm a successful connection
