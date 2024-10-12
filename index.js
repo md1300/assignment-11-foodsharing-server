@@ -1,6 +1,8 @@
 const express=require('express')
 var cors = require('cors')
 require('dotenv').config()
+const cookieParser = require('cookie-parser')
+const  jwt = require('jsonwebtoken');
 const app =express()
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const port=process.env.PORT || 5000
@@ -14,19 +16,32 @@ const corsOption={
 
 app.use(express.json())
 app.use(cors(corsOption))
+app.use(cookieParser())
+
+//--------------------- create jwt verify middleware------------------------
+
+const verifyToken=(req,res,next)=>{
+  const token=req.cookies?.token
+  if(!token)return res.status(401).send({message:'unauthorized access'})
+    if(token){
+      jwt.verify(token,process.env.ACCESS_TOKEN_SECRETS,(error,decoded)=>{
+        if(error)return res.status(401).send({message:'unAuthorized access'})
+        
+        req.user=decoded
+        next()
+      })
+    }
+}
 
 
 app.get('/',(req,res)=>{
     res.send('the server is running')
 })
-// user=food-sharing
-// password =mlb29EnMYrlHSQvJ
-
-// -----mongodb start ---------------
 
 
 
-const uri = "mongodb+srv://food-sharing:mlb29EnMYrlHSQvJ@cluster0.vmhty.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+
+const uri = `mongodb+srv://${process.env.DB_NAME}:${process.env.DB_PASSWORD}@cluster0.vmhty.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
 // Create a MongoClient with a MongoClientOptions object to set the Stable API version
 const client = new MongoClient(uri, {
@@ -44,6 +59,27 @@ async function run() {
 
     const foodsCollection=client.db('Foods').collection('collected')
     const requestedFoodsCollection=client.db('Foods').collection('requested')
+
+// ------------create jwt token ---------------------------
+app.post('/jwt',async(req,res)=>{
+  const email=req.body
+  const token=jwt.sign(email,process.env.ACCESS_TOKEN_SECRETS,{expiresIn:'365d'})
+  res.cookie('token',token,{
+    httpOnly: true,
+    secure: process.env.NODE_ENV==='production',
+    sameSite: process.env.NODE_ENV==='production'?'none':'strict'
+  })
+  .send({success:true})
+})
+// -----------clear jwt  token or cokies ------------
+app.get('/logOut',(req,res)=>{
+  res.clearCookie('token',{
+    httpOnly:true,
+    secure:process.env.NODE_ENV==='production',
+    sameSite:process.env.NODE_ENV==='production'?'none':'strict',
+    maxAge:0
+  }).send({success:true})
+})
 
 // ------------------ get all data from food collection in mongodb----------
 
@@ -75,8 +111,12 @@ app.get('/added-food',async(req,res)=>{
   })
 
   // ---------get my posted data -------------------
-  app.get('/my-posted-food/:email',async(req,res)=>{
+  app.get('/my-posted-food/:email',verifyToken,async(req,res)=>{
+    const tokenEmail=req.user.email
       const email=req.params.email;
+      if(tokenEmail!==email){
+        return res.status(403).send({message:'forbidden access'})
+      }
       const query={donator_email:email}
       const result=await foodsCollection.find(query).toArray()
       res.send(result)
@@ -116,8 +156,12 @@ app.get('/added-food',async(req,res)=>{
     res.send(result)
   })
 // ----------------my foods request -------------------------
-app.get('/my-request/:email',async(req,res)=>{
+app.get('/my-request/:email',verifyToken,async(req,res)=>{
+  const tokenEmail=req.user.email
      const email=req.params.email
+     if(tokenEmail!==email){
+      return res.status(403).send({message:'forbidden access'})
+    }
      const query={user_email:email}
      const result=await requestedFoodsCollection.find(query).toArray()
      res.send(result)
@@ -135,12 +179,14 @@ app.get('/all-available-food/:available',async(req,res)=>{
 
 app.get('/all-available-food',async(req,res)=>{
   const search=req.query.search
-  
+  const sort=req.query.sort
+  console.log(sort)
   let query={
     food_name:{$regex:search,$options:'i'}
    }
-
-  const result=await foodsCollection.find(query).toArray()
+ let options={}
+ if(sort)options={sort:{expire_data:sort==='asc'?1:-1}}
+  const result=await foodsCollection.find(query,options).toArray()
   res.send(result) 
 })
 
