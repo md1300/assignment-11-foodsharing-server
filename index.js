@@ -112,10 +112,38 @@ app.get('/added-food',async(req,res)=>{
         ...information
       }
     }
-    console.log(id,information)
     const result=await foodsCollection.updateOne(filter,updateDoc,options)
     res.send(result)
   })
+// ----------------my foods request -------------------------
+app.get('/my-request/:email',async(req,res)=>{
+     const email=req.params.email
+     const query={user_email:email}
+     const result=await requestedFoodsCollection.find(query).toArray()
+     res.send(result)
+})
+// --------------get all available foods data -------------
+app.get('/all-available-food/:available',async(req,res)=>{
+  const available=req.params.available
+  const query={food_status:available}
+  const result=await foodsCollection.find(query).toArray()
+  res.send(result)
+})
+
+
+// ------------- search and sort foods data   ----------------------
+
+app.get('/all-available-food',async(req,res)=>{
+  const search=req.query.search
+  
+  let query={
+    food_name:{$regex:search,$options:'i'}
+   }
+
+  const result=await foodsCollection.find(query).toArray()
+  res.send(result) 
+})
+
 
     // Send a ping to confirm a successful connection
     // await client.db("admin").command({ ping: 1 });
