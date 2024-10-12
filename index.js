@@ -80,11 +80,19 @@ app.get('/logOut',(req,res)=>{
     maxAge:0
   }).send({success:true})
 })
+// ---------count total number of data for pagination --------
+app.get('/foods-count',async(req,res)=>{
+  const query={food_status:'available'}
+  const count=await foodsCollection.countDocuments(query)
+  res.send({count})
+})
 
-// ------------------ get all data from food collection in mongodb----------
+// ------------------ get all data from food collection in mongodb and  get pagination ----------
 
 app.get('/added-food',async(req,res)=>{
-  const cursor=await foodsCollection.find().toArray()
+  const size=parseInt(req.query.size)
+  const page=parseInt(req.query.page)-1
+  const cursor=await foodsCollection.find().skip(size*page).limit(size).toArray()
   res.send(cursor)
 })
 
